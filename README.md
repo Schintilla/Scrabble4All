@@ -1,8 +1,8 @@
-# ScrabOut
+# Scrabble4All
 
-A single-file, browser-based word board game in the style of the old Windows
-"ScrabOut" Scrabble game. No install, no server, no dependencies: open
-`ScrabOut.html` (or `index.html`) in a modern browser and play.
+A single-file, browser-based word board game, inspired by the old Windows
+"ScrabOut" game. No install, no server, no dependencies: open
+`Scrabble4All.html` (or `index.html`) in a modern browser and play.
 
 *Not affiliated with or endorsed by the makers of Scrabble.*
 
@@ -44,12 +44,14 @@ With more than one human player, everyone shares the same screen and a
 
 The default word list is embedded in the HTML file. Any plain-text file with
 one word per line can be loaded with **Dictionary → New dictionary…**.
-If `ScrabOut-dictionary.txt` sits next to the page and it is served over
-http(s), it is loaded automatically. In Edge/Chrome the game also remembers the
-dictionary file you last saved or opened and offers to load it next time.
+Saving writes `scrabble4all-custom-dictionary.txt` by default. If that file sits
+next to the page and the page is served over http(s), it is loaded
+automatically. In Edge/Chrome the game also remembers the dictionary file you
+last saved or opened and offers to load it next time.
 
 ## Saved games
 
 **Game → Save game** writes a `.json` file with the board, racks, bag, scores
-and settings. **Game → Open game…** resumes it. A saved game does not include
-the dictionary, and it contains every player's rack.
+and settings. **Game → Open game…** resumes it (games saved by the earlier
+"ScrabOut" version still open). A saved game does not include the dictionary,
+and it contains every player's rack.
