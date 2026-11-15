@@ -174,7 +174,7 @@ function evalMove(){
 }
 $("play").onclick=()=>{
   if(!(humanTurn()||cpuAct))return;swapMode=false;swapSel=new Set();
-  const e=evalMove();if(e.err){msg(e.err);return}
+  const e=evalMove();if(e.err){sfx("error");msg(e.err);return}
   if($("chk").checked){const bad=e.words.filter(w=>!dict.has(w.toLowerCase()));if(bad.length){sfx("error");msg("Not in dictionary: "+bad.join(", "));return}}
   const p=players[cur];p.score+=e.score;
   for(const x of pend){board[x.r][x.c]=x.t;p.rack.splice(p.rack.indexOf(x.t),1)}
