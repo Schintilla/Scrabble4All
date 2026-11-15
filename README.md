@@ -1,17 +1,30 @@
 # Scrabble4All
 
-A single-file, browser-based word board game, inspired by the old Windows
-"ScrabOut" game. No install, no server, no dependencies: open
-`Scrabble4All.html` (or `index.html`) in a modern browser and play.
+A browser-based word board game, inspired by the old Windows "ScrabOut" game.
+Plain HTML, CSS and JavaScript: no build step, no dependencies.
 
 *Not affiliated with or endorsed by the makers of Scrabble.*
 
+## Files
+
+```
+index.html                              the game
+scrabble4all-default-dictionary.txt     default word list (one word per line)
+scrabble4all-custom-dictionary.txt      optional: your own list, loaded automatically
+sounds/                                 Tiledown.wav, Slide.wav, Shuffle.wav, Winner.wav
+```
+
+The word list and sounds are loaded when the page starts, so keep these files
+together. Edit the `.txt` files to change the dictionary; no code change needed.
+
 ## Run it
 
-- **Locally:** download the file and double-click it.
-- **Online:** enable GitHub Pages (Settings → Pages → deploy from `main`, root).
-  If the file is named `index.html`, the game is served at
-  `https://<your-name>.github.io/<repo>/`.
+- **Online:** deploy the repository to any static host (Vercel, GitHub Pages, ...).
+- **Locally:** serve the folder, for example `python -m http.server`, then open
+  `http://localhost:8000/`.
+- **Straight from disk:** browsers block a page from reading neighbouring files,
+  so the game asks you to choose `scrabble4all-default-dictionary.txt` once per
+  visit. Sounds still work.
 
 Works best in Microsoft Edge or Google Chrome. Other browsers play fine, but
 saving files falls back to a normal download.
@@ -25,8 +38,8 @@ saving files falls back to a normal download.
 - Swap tiles, swap all, shuffle, recall; sound effects (toggle in Options)
 - Look up a word's meaning (double-click a word in the score list; needs internet)
 - **Save / open games** to resume later (Game menu)
-- Large built-in dictionary you can customise (Dictionary menu):
-  add or remove words, load a new list, save it, restore the default
+- Customisable dictionary (Dictionary menu): add or remove words, load a new
+  list, save it, restore the default
 
 ## How to play
 
@@ -42,16 +55,15 @@ With more than one human player, everyone shares the same screen and a
 
 ## Dictionary
 
-The default word list is embedded in the HTML file. Any plain-text file with
-one word per line can be loaded with **Dictionary → New dictionary…**.
-Saving writes `scrabble4all-custom-dictionary.txt` by default. If that file sits
-next to the page and the page is served over http(s), it is loaded
-automatically. In Edge/Chrome the game also remembers the dictionary file you
-last saved or opened and offers to load it next time.
+At start-up the game loads `scrabble4all-default-dictionary.txt`. If
+`scrabble4all-custom-dictionary.txt` is also present it replaces the default.
+**Dictionary → New dictionary…** loads any plain-text word list, and **Save**
+writes your changes to a file on your own computer (the hosted copy is not
+modified; commit the updated `.txt` to the repository to publish it).
+**Restore default** goes back to the default list.
 
 ## Saved games
 
 **Game → Save game** writes a `.json` file with the board, racks, bag, scores
-and settings. **Game → Open game…** resumes it (games saved by the earlier
-"ScrabOut" version still open). A saved game does not include the dictionary,
-and it contains every player's rack.
+and settings. **Game → Open game…** resumes it. A saved game does not include
+the dictionary, and it contains every player's rack.

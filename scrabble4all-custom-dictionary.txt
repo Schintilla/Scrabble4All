@@ -138478,9 +138478,7 @@ opuses
 oquassa
 oquassas
 or
-orach
 orache
-oraches
 oracies
 oracle
 oracled
@@ -212723,7 +212721,6 @@ totems
 toter
 toters
 totes
-tother
 totient
 totients
 toting
