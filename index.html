@@ -72,7 +72,7 @@ body{display:flex;justify-content:center;align-items:center;height:100vh}
 <script>
 let BASE=[];const dict=new Set();
 let soundOn=true;
-const SND={tile:"sounds/Tiledown.wav",slide:"sounds/Slide.wav",shuffle:"sounds/Shuffle.wav",win:"sounds/Winner.wav"};
+const SND={tile:"sounds/Tiledown.wav",slide:"sounds/Slide.wav",shuffle:"sounds/Shuffle.wav",win:"sounds/Winner.wav",error:"sounds/Error.wav"};
 const AU={};if(typeof Audio!=="undefined")for(const k in SND){AU[k]=new Audio(SND[k]);AU[k].preload="auto"}
 function sfx(k,n=1,gap=120){if(!soundOn||!AU[k])return;for(let i=0;i<n;i++)setTimeout(()=>{try{AU[k].cloneNode().play().catch(()=>{})}catch(e){}},i*gap)}
 
@@ -175,7 +175,7 @@ function evalMove(){
 $("play").onclick=()=>{
   if(!(humanTurn()||cpuAct))return;swapMode=false;swapSel=new Set();
   const e=evalMove();if(e.err){msg(e.err);return}
-  if($("chk").checked){const bad=e.words.filter(w=>!dict.has(w.toLowerCase()));if(bad.length){msg("Not in dictionary: "+bad.join(", "));return}}
+  if($("chk").checked){const bad=e.words.filter(w=>!dict.has(w.toLowerCase()));if(bad.length){sfx("error");msg("Not in dictionary: "+bad.join(", "));return}}
   const p=players[cur];p.score+=e.score;
   for(const x of pend){board[x.r][x.c]=x.t;p.rack.splice(p.rack.indexOf(x.t),1)}
   p.moves.push(e.words.map((w,i)=>({w:w.toLowerCase(),s:e.ws[i],k:1})).concat(pend.length==7?[{w:"all 7 tiles",s:50}]:[]));
@@ -337,13 +337,32 @@ function pickMove(){
   m.pl=m.pl.map(x=>{if(x.t.src){const q=x.t.src;q.ch=x.t.ch;q.pts=0;q.blank=true;q.orig=true;return{r:x.r,c:x.c,t:q}}return x});
   return m;
 }
+const CPU_TILE_MS=420,CPU_HOLD_MS=600;   // pause between computer tiles / before its score is added (ms)
 function cpuTurn(){
   if(over||!players[cur].cpu)return;
   busy=true;note=players[cur].name+" is thinking…";render();const g=gid;
   setTimeout(()=>{if(g!==gid)return;
-    const P=players[cur],sn=takeSnap(),m=pickMove();snap=null;cpuAct=true;busy=false;
-    if(m){pend=m.pl;sfx("tile",m.pl.length,140);pendingNote=`${P.name} played ${m.e.words.join(", ")} for ${m.e.score}.`;$("play").onclick();if(!over){snap={...sn,main:m.e.words.reduce((a,b)=>b.length>a.length?b:a),sig:sigOf(m.pl)};render()}}
-    else if(bag.length>=7){pendingNote=P.name+" swapped tiles.";$("swap").onclick()}
+    const P=players[cur],sn=takeSnap(),m=pickMove();snap=null;
+    if(m){
+      // place the tiles one at a time (with the tile sound) so the move can be followed
+      const pl=m.pl;pend=[];let i=0;
+      const commit=()=>{
+        if(g!==gid)return;
+        cpuAct=true;busy=false;pend=pl;
+        pendingNote=`${P.name} played ${m.e.words.join(", ")} for ${m.e.score}.`;
+        $("play").onclick();
+        if(!over){snap={...sn,main:m.e.words.reduce((a,b)=>b.length>a.length?b:a),sig:sigOf(m.pl)};render()}
+        cpuAct=false;
+      };
+      const step=()=>{
+        if(g!==gid)return;
+        if(i<pl.length){pend.push(pl[i++]);sfx("tile");render();setTimeout(step,CPU_TILE_MS)}
+        else setTimeout(commit,CPU_HOLD_MS);
+      };
+      step();return;
+    }
+    cpuAct=true;busy=false;
+    if(bag.length>=7){pendingNote=P.name+" swapped tiles.";$("swap").onclick()}
     else{pendingNote=P.name+" passed.";$("pass").onclick()}
     cpuAct=false;
   },60);

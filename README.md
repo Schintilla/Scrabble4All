@@ -11,7 +11,7 @@ Plain HTML, CSS and JavaScript: no build step, no dependencies.
 index.html                              the game
 scrabble4all-default-dictionary.txt     default word list (one word per line)
 scrabble4all-custom-dictionary.txt      optional: your own list, loaded automatically
-sounds/                                 Tiledown.wav, Slide.wav, Shuffle.wav, Winner.wav
+sounds/                                 Tiledown.wav, Slide.wav, Shuffle.wav, Winner.wav, Error.wav
 ```
 
 The word list and sounds are loaded when the page starts, so keep these files
