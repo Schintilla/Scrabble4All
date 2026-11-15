@@ -35936,8 +35936,6 @@ citizenship
 citizenships
 citola
 citolas
-citole
-citoles
 citral
 citrals
 citrange
@@ -37149,8 +37147,6 @@ closuring
 clot
 clotbur
 clotburs
-clote
-clotes
 cloth
 clothbound
 clothe
@@ -37273,8 +37269,6 @@ cloys
 cloysome
 clozapine
 clozapines
-cloze
-clozes
 club
 clubability
 clubable
@@ -44710,12 +44704,6 @@ cozens
 cozes
 cozey
 cozeys
-cozie
-cozied
-cozier
-coziers
-cozies
-coziest
 cozily
 coziness
 cozinesses
@@ -63177,10 +63165,6 @@ egotist
 egotistic
 egotistical
 egotists
-egotize
-egotized
-egotizes
-egotizing
 egregious
 egregiously
 egress
@@ -85097,10 +85081,6 @@ glowworm
 glowworms
 gloxinia
 gloxinias
-gloze
-glozed
-glozes
-glozing
 glozings
 glucagon
 glucagons
@@ -85633,7 +85613,6 @@ goers
 goes
 goethite
 goethites
-goetic
 goeties
 goety
 goey
@@ -137435,7 +137414,6 @@ olefine
 olefines
 olefinic
 olefins
-oleic
 oleiferous
 olein
 oleine
@@ -138715,7 +138693,6 @@ oreads
 orecchiette
 orecchietti
 orectic
-orective
 oregano
 oreganos
 oreide
@@ -207339,7 +207316,6 @@ teed
 teeing
 teek
 teel
-teels
 teem
 teemed
 teemer
@@ -213120,12 +213096,8 @@ toysome
 toytown
 toywoman
 toywomen
-toze
-tozed
-tozes
 tozie
 tozies
-tozing
 trabeate
 trabeated
 trabeation
@@ -216717,8 +216689,6 @@ turfskis
 turfy
 turgencies
 turgency
-turgent
-turgently
 turgescence
 turgescences
 turgescency
@@ -217643,10 +217613,7 @@ tzetse
 tzetses
 tzetze
 tzetzes
-tzigane
-tziganes
 tziganies
-tzigany
 tzimmes
 tzitzis
 tzitzit
@@ -236110,10 +236077,8 @@ zidovudines
 ziffius
 ziffiuses
 ziffs
-zigan
 ziganka
 zigankas
-zigans
 zigged
 zigging
 ziggurat
@@ -236289,9 +236254,7 @@ zizzle
 zizzled
 zizzles
 zizzling
-zlote
 zloties
-zloty
 zlotych
 zlotys
 zoaea
@@ -236324,7 +236287,6 @@ zoechromes
 zoecia
 zoecium
 zoeform
-zoetic
 zoetrope
 zoetropes
 zoetropic
