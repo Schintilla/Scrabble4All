@@ -579,9 +579,13 @@ Options:[[`<span id="sndmark"></span>Sound`,()=>{soundOn=!soundOn;if(soundOn)sfx
 Dictionary:[["New dictionary…",()=>openDict(true)],"-",["Add word…",()=>askWord("Add word","Type one or more words, separated by spaces:","Add",v=>applyWords(v,false,""),true)],["Remove word",()=>askWord("Remove word","Type the word to remove. Its plurals and other forms are removed too.","Remove",v=>{selWord=clean(v);removeSel()},false,selWord||"",{label:"Remove & Save",cb:v=>{selWord=clean(v);if(removeSel())saveDict(false)}})],["Save",()=>saveDict(false)],["Save As…",()=>saveDict(true)],"-",["Restore default",restoreDict],"-",["Look up meaning",()=>lookup(selWord)]],
 Help:[["How to play",()=>alert("Click a tile on your rack, then click a square on the board. Click a placed tile to take it back.\nPress Done when your word is finished, or Pass.\nPlay menu: swap tiles, shuffle, recall.\nA blank tile asks which letter it stands for.")]]};
 $("menubar").innerHTML=Object.keys(MENUS).map(k=>`<div class="menu"><span class="mt">${k}</span><div class="drop">${MENUS[k].map((m,i)=>m==="-"?`<div class="sep"></div>`:`<div class="mi" data-k="${k}" data-i="${i}">${m[0]}</div>`).join("")}</div></div>`).join("");
+document.querySelectorAll("#menubar .menu").forEach(m=>{
+  m.addEventListener("mouseenter",()=>{document.querySelectorAll(".menu.open").forEach(x=>{if(x!==m)x.classList.remove("open")});m.classList.add("open")});
+  m.addEventListener("mouseleave",()=>m.classList.remove("open"));
+});
 document.addEventListener("click",e=>{const mt=e.target.closest(".mt"),mi=e.target.closest(".mi");
   document.querySelectorAll(".menu.open").forEach(m=>{if(!mt||m!==mt.parentNode)m.classList.remove("open")});
-  if(mt)mt.parentNode.classList.toggle("open");
+  if(mt)mt.parentNode.classList.add("open");
   if(mi){mi.closest(".menu").classList.remove("open");MENUS[mi.dataset.k][+mi.dataset.i][1]();render()}});
 boot();
 </script></body></html>
