@@ -58,6 +58,11 @@ body{display:flex;justify-content:center;align-items:center;height:100vh}
 #rack .tile{touch-action:none;user-select:none;cursor:grab}
 .cell.dropt{outline:3px solid #fff;outline-offset:-3px}.tile.pend{cursor:grab;touch-action:none;user-select:none}
 #btns button:disabled{color:#808080;text-shadow:1px 1px 0 #fff;cursor:default}
+.win{--c0:min(64px,calc((100vh - 120px)/15));--panel:max(clamp(390px,28vw,560px),calc(var(--c0)*7 + 48px));--c:max(16px,min(var(--c0),calc((100vw - var(--panel) - 60px)/15)))}
+#rack{--c:inherit}
+#rack .tile{flex:none;width:var(--c);height:var(--c);max-width:none;aspect-ratio:auto;font-size:calc(var(--c)*.6)}
+#rack .tile sub{font-size:calc(var(--c)*.25);right:2px;bottom:1px}
+.cell.dropt{outline:4px solid #ff2d55;outline-offset:-4px;filter:brightness(1.12)}
 </style></head><body>
 <div id="cover"></div><div id="pop" class="dlg"></div>
 <div class="win">
@@ -374,6 +379,7 @@ function reorderRack(i0,j){
   disp.splice(j,0,disp.splice(i0,1)[0]);
   slots.forEach((si,k)=>{rack[si]=disp[k]});
 }
+const ctrOf=el=>{const r=el.getBoundingClientRect();return{clientX:r.left+r.width/2,clientY:r.top+r.height/2}};   // centre of the dragged tile
 let hov=null;
 function clearHover(){if(hov){hov.classList.remove("dropt");hov=null}}
 function hoverCell(e){const u=document.elementFromPoint(e.clientX,e.clientY),c=u&&u.closest&&u.closest("#board .cell");if(hov&&hov!==c)hov.classList.remove("dropt");hov=c||null;if(c)c.classList.add("dropt")}
@@ -382,13 +388,13 @@ const listen=(move,up)=>{["pointermove","pointerup","pointercancel"].forEach((n,
 function rackDrag(ev,el,t){
   if(ev.button>0||over)return;
   const els=[...$("rack").children],i0=els.indexOf(el);if(i0<0)return;
-  const cs=els.map(x=>{const r=x.getBoundingClientRect();return r.left+r.width/2}),w=el.offsetWidth+2,x0=ev.clientX,y0=ev.clientY,under=e=>document.elementFromPoint(e.clientX,e.clientY);
+  const cs=els.map(x=>{const r=x.getBoundingClientRect();return r.left+r.width/2}),w=el.offsetWidth+2,x0=ev.clientX,y0=ev.clientY,under=()=>{const q=ctrOf(el);return document.elementFromPoint(q.clientX,q.clientY)};
   let on=false,j=i0,stop;
   const move=e=>{
     const dx=e.clientX-x0,dy=e.clientY-y0;
-    if(!on){if(Math.hypot(dx,dy)<6)return;on=true;els.forEach(x=>{x.style.transition=x===el?"none":"transform .12s"});el.style.position="relative";el.style.zIndex=5;el.style.pointerEvents="none";el.style.cursor="grabbing"}
-    el.style.transform=`translate(${dx}px,${dy}px)`;hoverCell(e);
-    const u=under(e);
+    if(!on){if(Math.hypot(dx,dy)<6)return;on=true;els.forEach(x=>{x.style.transition=x===el?"none":"transform .12s"});el.style.position="relative";el.style.zIndex=5;el.style.pointerEvents="none";el.style.opacity=".8";el.style.cursor="grabbing"}
+    el.style.transform=`translate(${dx}px,${dy}px)`;hoverCell(ctrOf(el));
+    const u=under();
     if(u&&u.closest&&u.closest("#rack")){const c=cs[i0]+dx;j=0;cs.forEach((v,k)=>{if(Math.abs(v-c)<Math.abs(cs[j]-c))j=k})}else j=i0;
     els.forEach((x,k)=>{if(x!==el)x.style.transform=j>i0&&k>i0&&k<=j?`translateX(${-w}px)`:j<i0&&k>=j&&k<i0?`translateX(${w}px)`:""});
   };
@@ -397,7 +403,7 @@ function rackDrag(ev,el,t){
     if(!on)return;
     dragMoved=true;setTimeout(()=>{dragMoved=false},60);
     if(e.type==="pointercancel"){render();return}
-    const u=under(e),cell=u&&u.closest&&u.closest("#board .cell");
+    const u=under(),cell=u&&u.closest&&u.closest("#board .cell");
     if(cell&&!swapMode&&humanTurn()&&free(+cell.dataset.r,+cell.dataset.c)){dragMoved=false;sel=t;cellClick(+cell.dataset.r,+cell.dataset.c);dragMoved=true;render();return}
     reorderRack(i0,j);if(j!==i0)sfx("slide");render();
   };
@@ -408,15 +414,15 @@ function boardDrag(ev,el,pe){
   const cellEl=el.parentNode,x0=ev.clientX,y0=ev.clientY;let on=false,stop;
   const move=e=>{
     const dx=e.clientX-x0,dy=e.clientY-y0;
-    if(!on){if(Math.hypot(dx,dy)<6)return;on=true;cellEl.style.overflow="visible";cellEl.style.zIndex=50;el.style.position="relative";el.style.pointerEvents="none";el.style.cursor="grabbing"}
-    el.style.transform=`translate(${dx}px,${dy}px)`;hoverCell(e);
+    if(!on){if(Math.hypot(dx,dy)<6)return;on=true;cellEl.style.overflow="visible";cellEl.style.zIndex=50;el.style.position="relative";el.style.pointerEvents="none";el.style.opacity=".8";el.style.cursor="grabbing"}
+    el.style.transform=`translate(${dx}px,${dy}px)`;hoverCell(ctrOf(el));
   };
   const up=e=>{
     stop();clearHover();
     if(!on)return;
     dragMoved=true;setTimeout(()=>{dragMoved=false},60);
     if(e.type!=="pointercancel"){
-      const u=document.elementFromPoint(e.clientX,e.clientY),cell=u&&u.closest&&u.closest("#board .cell");
+      const q=ctrOf(el),u=document.elementFromPoint(q.clientX,q.clientY),cell=u&&u.closest&&u.closest("#board .cell");
       if(cell){const r=+cell.dataset.r,c=+cell.dataset.c;if(free(r,c,pe)){pe.r=r;pe.c=c;sfx("tile")}}
       else if(u&&u.closest&&u.closest("#right")){const t=pe.t;pend.splice(pend.indexOf(pe),1);if(t.orig){t.ch="?";t.blank=false}sfx("slide")}
     }
