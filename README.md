@@ -36,7 +36,8 @@ saving files falls back to a normal download.
 - Reject the computer's last move and make it try again
 - Drag tiles within the rack, onto the board, between squares, or back to the rack
 - Swap tiles, swap all, shuffle, recall; sound effects (toggle in Options)
-- Look up a word's meaning (double-click a word in the score list; needs internet)
+- Look up a word's meaning (double-click a word in the score list, or use
+  **Check definition** in the Add word window; needs internet)
 - **Save / open games** to resume later (Game menu)
 - Customisable dictionary (Dictionary menu): add or remove words, load a new
   list, save it, restore the default
@@ -61,6 +62,13 @@ At start-up the game loads `scrabble4all-default-dictionary.txt`. If
 writes your changes to a file on your own computer (the hosted copy is not
 modified; commit the updated `.txt` to the repository to publish it).
 **Restore default** goes back to the default list.
+
+## Word meanings
+
+Definitions come from the free [Free Dictionary API](https://dictionaryapi.dev/)
+(`api.dictionaryapi.dev`), queried from the player's browser when they ask for a
+meaning. Only the word being looked up is sent. The service is community-run, so
+it can be slow or missing a word; the game then shows a link to Wiktionary.
 
 ## Saved games
 

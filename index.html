@@ -442,9 +442,18 @@ $("swapsel").onclick=()=>{
   for(let i=bag.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[bag[i],bag[j]]=[bag[j],bag[i]]}
   p.moves.push([{w:`(swapped ${out.length} tile${out.length>1?"s":""})`,s:""}]);passes++;next();
 };
-function askWord(title,label,btn,cb,file,init,alt){
-  popup(title,`<p>${label}</p><p><input id="aw" value="${esc(init||"")}" style="width:100%" maxlength="80" autocomplete="off"></p><p style="text-align:center"><button class="b95" id="ao">${btn}</button> ${alt?`<button class="b95" id="ao2">${alt.label}</button> `:""}${file?'<button class="b95" id="af">From file…</button> ':""}<button class="b95" id="ac">Cancel</button></p>`);
+function askWord(title,label,btn,cb,file,init,alt,def){
+  popup(title,`<p>${label}</p><p><input id="aw" value="${esc(init||"")}" style="width:100%" maxlength="80" autocomplete="off"></p><p style="text-align:center"><button class="b95" id="ao">${btn}</button> ${alt?`<button class="b95" id="ao2">${alt.label}</button> `:""}${def?'<button class="b95" id="ad">Check definition</button> ':""}${file?'<button class="b95" id="af">From file…</button> ':""}<button class="b95" id="ac">Cancel</button></p>${def?'<div id="adef" style="display:none;margin-top:6px;border:2px inset #808080;background:#fff;padding:4px 8px;max-height:34vh;overflow:auto;font-size:12px;text-align:left"></div>':""}`);
   const go=()=>{const v=$("aw").value.trim();closePop();if(v)cb(v)};
+  if(def)$("ad").onclick=async()=>{
+    const ws=$("aw").value.trim().split(/\s+/).map(clean).filter(x=>x.length>1),box=$("adef"),w=ws[0];
+    box.style.display="block";
+    if(!w){box.innerHTML="<p>Type a word first, then click Check definition.</p>";return}
+    const my=++defId;box.innerHTML=`<p>Looking up “${esc(w)}”…</p>`;
+    const r=await defineHtml(w);
+    if(my!==defId||!$("adef"))return;
+    box.innerHTML=`<p><b>${esc(w)}</b>${ws.length>1?` <i>(first of ${ws.length} words)</i>`:""} — ${dict.has(w)?"already in the dictionary":"not in the dictionary yet"}.</p>`+r.html+(r.retry?"<p>Click Check definition to try again.</p>":"");
+  };
   $("ao").onclick=go;if(alt)$("ao2").onclick=()=>{const v=$("aw").value.trim();closePop();if(v)alt.cb(v)};$("ac").onclick=closePop;if(file)$("af").onclick=()=>{closePop();openDict(false)};
   $("aw").onkeydown=e=>{if(e.key==="Enter")go()};$("aw").focus();$("aw").select();
 }
@@ -551,13 +560,9 @@ function askLetter(){
   });
 }
 function closePop(){if(letterResolve){const r=letterResolve;letterResolve=null;r(null)}$("pop").style.display="none"}
-async function lookup(w){
-  if(!w){askWord("Look up meaning","Type a word (or double-click a word in a score list):","Look up",v=>lookup(clean(v)));return}
-  const my=++lkId,ew=esc(w),title=`Meaning — ${ew}`,
-    link=`<a href="https://en.wiktionary.org/wiki/${encodeURIComponent(w)}" target="_blank" rel="noopener">Look it up on Wiktionary</a>`,
-    show=(h,retry)=>{if(my!==lkId)return;popup(title,h+`<p style="text-align:center">${retry?'<button class="b95" id="pr">Try again</button> ':""}<button class="b95" id="pc">Close</button></p>`);$("pc").onclick=closePop;if(retry)$("pr").onclick=()=>lookup(w)};
-  popup(title,`<p>Looking up “${ew}”…</p>`);
-  if(typeof navigator!=="undefined"&&navigator.onLine===false)return show(`<p><b>No internet connection.</b> Check your connection, then try again.</p>`,true);
+async function defineHtml(w){   // -> {html, retry}: the meaning (or the reason it could not be found) as HTML
+  const ew=esc(w),link=`<a href="https://en.wiktionary.org/wiki/${encodeURIComponent(w)}" target="_blank" rel="noopener">Look it up on Wiktionary</a>`;
+  if(typeof navigator!=="undefined"&&navigator.onLine===false)return{html:`<p><b>No internet connection.</b> Check your connection, then try again.</p>`,retry:true};
   const API="https://api.dictionaryapi.dev/api/v2/entries/en/",ac=new AbortController(),tm=setTimeout(()=>ac.abort(),10000),
     tries=[...new Set([w,w.replace(/ies$/,"y"),w.replace(/(es|s)$/,""),w.replace(/ed$/,""),w.replace(/d$/,""),w.replace(/ing$/,""),w.replace(/ing$/,"e")])].filter(x=>x.length>1);
   let data=null,used=w,fail=null;
@@ -578,16 +583,24 @@ async function lookup(w){
     }
   }catch(e){fail=ac.signal.aborted?"timeout":"err:"}
   clearTimeout(tm);
-  if(my!==lkId)return;
-  if(fail==="net")return show(`<p><b>No connection.</b> Couldn't reach the online dictionary. Check your internet connection, then try again.</p>`,true);
-  if(fail==="timeout")return show(`<p><b>Timed out.</b> The online dictionary didn't respond in time.</p><p>${link}</p>`,true);
-  if(fail)return show(`<p><b>Dictionary service error</b>${fail.length>4?" ("+esc(fail.slice(4))+")":""}. Try again in a moment.</p><p>${link}</p>`,true);
-  if(!data)return show(`<p><b>No definition found</b> for “${ew}”. It may be a valid word that the online dictionary doesn't cover.</p><p>${link}</p>`,false);
+  if(fail==="net")return{html:`<p><b>No connection.</b> Couldn't reach the online dictionary. Check your internet connection, then try again.</p>`,retry:true};
+  if(fail==="timeout")return{html:`<p><b>Timed out.</b> The online dictionary didn't respond in time.</p><p>${link}</p>`,retry:true};
+  if(fail)return{html:`<p><b>Dictionary service error</b>${fail.length>4?" ("+esc(fail.slice(4))+")":""}. Try again in a moment.</p><p>${link}</p>`,retry:true};
+  if(!data)return{html:`<p><b>No definition found</b> for “${ew}”. It may be a valid word that the online dictionary doesn't cover.</p><p>${link}</p>`,retry:false};
   let h=used!==w?`<p><i>Showing “${esc(used)}”, a base form of “${ew}”.</i></p>`:"";
   for(const en of data.slice(0,2))for(const m of en.meanings.slice(0,4))
     h+=`<p><b>${esc(m.partOfSpeech||"")}</b></p><ol>${m.definitions.slice(0,3).map(d=>`<li>${esc(d.definition)}${d.example?`<div class="ex">“${esc(d.example)}”</div>`:""}</li>`).join("")}</ol>`;
-  show(h+`<p>${link}</p>`,false);
+  return{html:h+`<p>${link}</p>`,retry:false};
 }
+async function lookup(w){
+  if(!w){askWord("Look up meaning","Type a word (or double-click a word in a score list):","Look up",v=>lookup(clean(v)));return}
+  const my=++lkId,title=`Meaning — ${esc(w)}`,
+    show=(h,retry)=>{if(my!==lkId)return;popup(title,h+`<p style="text-align:center">${retry?'<button class="b95" id="pr">Try again</button> ':""}<button class="b95" id="pc">Close</button></p>`);$("pc").onclick=closePop;if(retry)$("pr").onclick=()=>lookup(w)};
+  popup(title,`<p>Looking up “${esc(w)}”…</p>`);
+  const r=await defineHtml(w);
+  show(r.html,r.retry);
+}
+let defId=0;
 const pick=w=>{selWord=w;document.querySelectorAll("#scores .mv.w").forEach(x=>x.classList.toggle("sel",x.dataset.w===selWord));updLabels()};
 document.addEventListener("click",e=>{
   const mv=e.target.closest&&e.target.closest("#scores .mv.w");if(!mv)return;
@@ -601,7 +614,7 @@ onbeforeunload=e=>{if(dChanged||(gDirty&&players&&!over)){e.preventDefault();e.r
 const click=id=>()=>$(id).click();
 const MENUS={Game:[["New game",()=>setup()],"-",["Open game…",()=>openGame()],["Save game",()=>saveGame(false)],["Save game as…",()=>saveGame(true)]],Play:[["Done",click("play")],["Pass",click("pass")],["Swap tiles",click("swapsel")],["Swap all",click("swap")],["Reject computer's move",click("rej")],["Shuffle rack",click("shuf")],["Recall placed tiles",click("recall")]],
 Options:[[`<span id="sndmark"></span>Sound`,()=>{soundOn=!soundOn;if(soundOn)sfx("slide")}],[`<span id="chkmark"></span>Check words in dictionary`,()=>{$("chk").checked=!$("chk").checked;render()}],"-",[`<span id="lv_easy"></span>Computer: Easy`,()=>setLevel("easy")],[`<span id="lv_medium"></span>Computer: Medium`,()=>setLevel("medium")],[`<span id="lv_hard"></span>Computer: Hard`,()=>setLevel("hard")]],
-Dictionary:[["New dictionary…",()=>openDict(true)],"-",["Add word…",()=>askWord("Add word","Type one or more words, separated by spaces:","Add",v=>applyWords(v,false,""),true,"",{label:"Add & Save",cb:v=>{if(applyWords(v,false,""))saveDict(false)}})],["Remove word",()=>askWord("Remove word","Type the word to remove. Its plurals and other forms are removed too.","Remove",v=>{selWord=clean(v);removeSel()},false,selWord||"",{label:"Remove & Save",cb:v=>{selWord=clean(v);if(removeSel())saveDict(false)}})],["Save",()=>saveDict(false)],["Save As…",()=>saveDict(true)],"-",["Restore default",restoreDict],"-",["Look up meaning",()=>lookup(selWord)]],
+Dictionary:[["New dictionary…",()=>openDict(true)],"-",["Add word…",()=>askWord("Add word","Type one or more words, separated by spaces:","Add",v=>applyWords(v,false,""),true,"",{label:"Add & Save",cb:v=>{if(applyWords(v,false,""))saveDict(false)}},true)],["Remove word",()=>askWord("Remove word","Type the word to remove. Its plurals and other forms are removed too.","Remove",v=>{selWord=clean(v);removeSel()},false,selWord||"",{label:"Remove & Save",cb:v=>{selWord=clean(v);if(removeSel())saveDict(false)}})],["Save",()=>saveDict(false)],["Save As…",()=>saveDict(true)],"-",["Restore default",restoreDict],"-",["Look up meaning",()=>lookup(selWord)]],
 Help:[["How to play",()=>alert("Click a tile on your rack, then click a square on the board. Click a placed tile to take it back.\nPress Done when your word is finished, or Pass.\nPlay menu: swap tiles, shuffle, recall.\nA blank tile asks which letter it stands for.")]]};
 $("menubar").innerHTML=Object.keys(MENUS).map(k=>`<div class="menu"><span class="mt">${k}</span><div class="drop">${MENUS[k].map((m,i)=>m==="-"?`<div class="sep"></div>`:`<div class="mi" data-k="${k}" data-i="${i}">${m[0]}</div>`).join("")}</div></div>`).join("");
 document.querySelectorAll("#menubar .menu").forEach(m=>{
