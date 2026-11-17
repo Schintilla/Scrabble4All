@@ -76,6 +76,8 @@ body{display:flex;justify-content:center;align-items:center;height:100vh}
 <div style="display:none"><input type="file" id="gfile" accept=".json,.scrabble4all"><input type="checkbox" id="chk" checked><input type="file" id="file" accept=".txt,.dic,.lst"><input type="file" id="file2" accept=".txt,.dic,.lst"></div>
 <script>
 let BASE=[];const dict=new Set();
+const DICTS=[{id:"uk",label:"UK common words",file:"UK-common-words.txt"},{id:"collins",label:"Collins Scrabble Dictionary",file:"Collins-Scrabble Dictionary.txt"},{id:"us",label:"US Google 10,000 common words",file:"US-google-10000-common-words.txt"}];
+let dSel="uk";const listCache={};   // dSel: uk | collins | us | custom
 let soundOn=true;
 const SND={tile:"sounds/Tiledown.wav",slide:"sounds/Slide.wav",shuffle:"sounds/Shuffle.wav",win:"sounds/Winner.wav",error:"sounds/Error.wav"};
 const AU={};if(typeof Audio!=="undefined")for(const k in SND){AU[k]=new Audio(SND[k]);AU[k].preload="auto"}
@@ -128,7 +130,7 @@ function render(){
   const oldScroll=[...document.querySelectorAll("#scores .col")].map(e=>e.scrollTop);$("scores").innerHTML=players.map(p=>`<div class="col"><div class="hd"><span>${esc(p.name)}</span><span>${p.score}</span></div>${p.moves.map(m=>`<div class="mg">${(()=>{let c=0;return m.map(l=>{c+=+l.s||0;return `<div class="mv${l.k?" w":""}${l.k&&l.w===selWord?" sel":""}"${l.k?` data-w="${l.w}"`:""}><span>${esc(l.w)}</span><span>${l.s}</span><span>${l.s===""?"":c}</span></div>`}).join("")})()}</div>`).join("")}</div>`).join("");
   $("status").textContent=note||(over?"Game over":`${players[cur].name}, play a word`);
   const mc=players.map(p=>p.moves.length).join();document.querySelectorAll("#scores .col").forEach((e,i)=>e.scrollTop=(mc!==lastMC?e.scrollHeight:(oldScroll[i]||0)));lastMC=mc;
-  updLabels();{const nm=$("sndmark");if(nm)nm.textContent=soundOn?"✓ ":" "}$("rej").style.display=players.some(p=>p.cpu)?"":"none";$("rej").disabled=!(snap&&humanTurn()&&!pend.length&&!swapMode);$("play").disabled=!(humanTurn()&&pend.length>0);$("swapsel").textContent=swapMode?(swapSel.size?`Swap ${swapSel.size} tile${swapSel.size>1?"s":""}`:"Cancel swap"):"Swap tiles";["easy","medium","hard"].forEach(k=>{const e=$("lv_"+k);if(e)e.textContent=level===k?"✓ ":"\u2003"});const cm=$("chkmark"),dc=$("dcount");if(cm)cm.textContent=$("chk").checked?"✓ ":"\u2003";if(dc)dc.textContent=dict.size.toLocaleString()+" words loaded"+(dChanged?" (modified)":"");
+  updLabels();{const nm=$("sndmark");if(nm)nm.textContent=soundOn?"✓ ":" "}$("rej").style.display=players.some(p=>p.cpu)?"":"none";$("rej").disabled=!(snap&&humanTurn()&&!pend.length&&!swapMode);$("play").disabled=!(humanTurn()&&pend.length>0);$("swapsel").textContent=swapMode?(swapSel.size?`Swap ${swapSel.size} tile${swapSel.size>1?"s":""}`:"Cancel swap"):"Swap tiles";["easy","medium","hard"].forEach(k=>{const e=$("lv_"+k);if(e)e.textContent=level===k?"✓ ":"\u2003"});["uk","collins","us","custom"].forEach(k=>{const e=$("dk_"+k);if(e)e.textContent=dSel===k?"✓ ":"\u2003"});const cm=$("chkmark"),dc=$("dcount");if(cm)cm.textContent=$("chk").checked?"✓ ":"\u2003";if(dc)dc.textContent=dict.size.toLocaleString()+" words loaded"+(dChanged?" (modified)":"");
 }
 const esc=s=>s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 function tileHTML(t,cls){return `<div class="tile ${cls} ${t.blank?"blank":""}">${t.ch=="?"?"":t.ch}${t.blank||t.ch=="?"?"":`<sub>${t.pts}</sub>`}</div>`}
@@ -216,21 +218,20 @@ function finish(out){
   $("again").onclick=()=>{closePop();setup()};$("gc").onclick=closePop;
   note=`Game over — ${win} ${win.includes("&")?"tie":"wins"} with ${best}. Use Game → New game to play again.`;render();
 }
-function applyWords(txt,replace,name){
-  const set=new Set();
-  for(let w of txt.split(/\s+/)){w=w.split("/")[0].toLowerCase();if(/^[a-z]{2,15}$/.test(w))set.add(w)}
+function applyWords(txt,replace,name,file){
+  const set=new Set(file?parseFile(txt):parse(txt));
   if(!set.size){msg("No usable words found (words must be 2–15 letters, A–Z).");return 0}
   let n=0;
-  if(replace){dict.clear();set.forEach(w=>dict.add(w));n=set.size;dName=name;dChanged=false;dJust=false;dAdd=dRem=0;dHandle=null}
+  if(replace){dict.clear();set.forEach(w=>dict.add(w));n=set.size;dName=name;dSel="custom";dChanged=false;dJust=false;dAdd=dRem=0;dHandle=null}
   else{set.forEach(w=>{if(!dict.has(w)){dict.add(w);n++}});if(n){dChanged=true;dJust=false;dAdd+=n}}
   TRIE=null;msg(replace?`Custom dictionary loaded: ${name} (${n.toLocaleString()} words).`:n?`Added ${n.toLocaleString()} new word${n>1?"s":""}.`:"Those words are already in the dictionary.");return n;
 }
-const loadFile=replace=>async e=>{const f=e.target.files[0];e.target.value="";if(f)applyWords(await f.text(),replace,f.name)};
+const loadFile=replace=>async e=>{const f=e.target.files[0];e.target.value="";if(f)applyWords(await f.text(),replace,f.name,true)};
 $("file").onchange=loadFile(false);$("file2").onchange=loadFile(true);
 async function openDict(replace){
   if(!window.showOpenFilePicker)return $(replace?"file2":"file").click();
-  try{const [h]=await showOpenFilePicker({types:[{description:"Word list",accept:{"text/plain":[".txt",".dic",".lst"]}}]});
-    if(applyWords(await(await h.getFile()).text(),replace,h.name)&&replace){dHandle=h;idb("put","dict",h).catch(()=>{})}}
+  try{const [h]=await showOpenFilePicker({id:"s4a-words",types:[{description:"Word list",accept:{"text/plain":[".txt",".dic",".lst"]}}]});
+    if(applyWords(await(await h.getFile()).text(),replace,h.name,true)&&replace){dHandle=h;idb("put","dict",h).catch(()=>{})}}
   catch(err){}
 }
 
@@ -282,7 +283,7 @@ function rejectCpu(){
 $("rej").onclick=rejectCpu;
 const tl=t=>t&&[t.ch,t.pts,t.blank?1:0,t.orig?1:0];
 function gameData(){
-  return {app:"Scrabble4All",v:1,saved:new Date().toISOString(),cur,first,passes,over,level,rejW:[...rejW],rejS:[...rejS],dict:dName||"default",
+  return {app:"Scrabble4All",v:1,saved:new Date().toISOString(),cur,first,passes,over,level,rejW:[...rejW],rejS:[...rejS],dict:dSel==="custom"?dName:dSel,
     board:board.map(r=>r.map(tl)),bag:bag.map(tl),players:players.map(p=>({name:p.name,cpu:!!p.cpu,score:p.score,rack:p.rack.map(tl),moves:p.moves}))};
 }
 async function saveGame(as){
@@ -458,10 +459,10 @@ function askWord(title,label,btn,cb,file,init,alt,def){
   $("aw").onkeydown=e=>{if(e.key==="Enter")go()};$("aw").focus();$("aw").select();
 }
 const clean=v=>v.toLowerCase().replace(/[^a-z]/g,"");
-function restoreDict(){dict.clear();BASE.forEach(w=>dict.add(w));TRIE=null;dChanged=false;dJust=false;dName="";dAdd=dRem=0;dHandle=null;msg("Default (built-in) dictionary restored.")}
+function restoreDict(){useDict(dSel==="custom"?"uk":dSel,true)}   // reload the selected built-in list (the UK default if a custom one is in use)
 function dictState(counts){
   const c=counts&&(dAdd||dRem)?` (+${dAdd.toLocaleString()} / −${dRem.toLocaleString()})`:"";
-  return (dName?`Custom dictionary: ${dName}`:"Default dictionary")+(dChanged?" — amended"+c:"");
+  return (dSel==="custom"?`Custom dictionary: ${dName}`:DICTS.find(d=>d.id===dSel).label)+(dChanged?" — amended"+c:"");
 }
 function updLabels(){
   const sd=$("sdict"),sc=$("scount"),st=$("stiles"),sl=$("slevel");
@@ -508,35 +509,45 @@ async function saveDict(as){
     catch(err){if(err&&err.name==="AbortError")return}
   }
   if(!done){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:"text/plain"}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
-  dName=name;dChanged=false;dJust=false;dAdd=dRem=0;msg(`Dictionary saved to ${name}.`);
+  dName=name;dSel="custom";dChanged=false;dJust=false;dAdd=dRem=0;msg(`Dictionary saved to ${name}.`);
 }
 function parse(txt){const set=new Set();for(let w of txt.split(/\s+/)){w=w.split("/")[0].toLowerCase();if(/^[a-z]{2,15}$/.test(w))set.add(w)}return [...set]}
+function parseFile(txt){
+  const lines=txt.split(/\r?\n/),toks=lines.length<20?txt.split(/\s+/):lines.map(l=>l.trim().split(/[\s,;|]+/)[0]),set=new Set();
+  for(let w of toks){w=(w||"").split("/")[0].toLowerCase();if(/^[a-z]{2,15}$/.test(w))set.add(w)}
+  return [...set];
+}
 async function fetchText(u){const r=await fetch(u);if(!r.ok||/html/i.test(r.headers.get("content-type")||""))throw 0;return r.text()}
 function pickText(){return new Promise(async res=>{
   if(window.showOpenFilePicker){try{const [h]=await showOpenFilePicker({types:[{description:"Word list",accept:{"text/plain":[".txt",".dic",".lst"]}}]});res(await(await h.getFile()).text())}catch(e){res(null)}}
   else{const i=document.createElement("input");i.type="file";i.accept=".txt,.dic,.lst";i.onchange=async()=>res(i.files[0]?await i.files[0].text():null);i.click()}})}
+async function loadList(d){
+  if(listCache[d.id])return listCache[d.id];
+  const w=parseFile(await fetchText(d.file));if(!w.length)throw 0;
+  return listCache[d.id]=w;
+}
 async function boot(){
   $("cover").style.display="flex";
   $("cover").innerHTML=dlg("Scrabble4All",`<p>Loading dictionary…</p>`);
-  let words=null;
-  try{words=parse(await fetchText("scrabble4all-default-dictionary.txt"))}catch(e){}
+  const d=DICTS[0];let words=null;
+  try{words=await loadList(d)}catch(e){}
   while(!words||!words.length){
     await new Promise(res=>{
-      $("cover").innerHTML=dlg("Scrabble4All — dictionary",`<p>The default dictionary file (scrabble4all-default-dictionary.txt) could not be loaded.</p><p style="font-size:12px">This happens when the page is opened straight from disk. Choose the file, or open the page from a web server.</p><p><button class="b95" id="dl">Choose file…</button></p>`);
-      $("dl").onclick=async()=>{const t=await pickText();if(t){const w=parse(t);if(w.length)words=w}res()};
+      $("cover").innerHTML=dlg("Scrabble4All — dictionary",`<p>The dictionary file (${esc(d.file)}) could not be loaded.</p><p style="font-size:12px">This happens when the page is opened straight from disk, or if the file is not in the same folder as the game. Choose the file, or open the page from a web server.</p><p><button class="b95" id="dl">Choose file…</button></p>`);
+      $("dl").onclick=async()=>{const t=await pickText();if(t){const w=parseFile(t);if(w.length){words=w;listCache[d.id]=w}}res()};
     });
   }
-  BASE=words;words.forEach(w=>dict.add(w));TRIE=null;
-  setup();updLabels();initDict();
+  BASE=words;dSel=d.id;words.forEach(w=>dict.add(w));TRIE=null;
+  setup();updLabels();
 }
-async function initDict(){
-  try{const t=await fetchText("scrabble4all-custom-dictionary.txt");applyWords(t,true,"scrabble4all-custom-dictionary.txt");return}catch(e){}
-  try{const h=await idb("get","dict");if(!h)return;
-    const load=async()=>{applyWords(await(await h.getFile()).text(),true,h.name);dHandle=h;closePop()};
-    if(await h.queryPermission({mode:"read"})==="granted")return load();
-    popup("Scrabble4All — saved dictionary",`<p>Your saved dictionary <b>${esc(h.name)}</b> was found. Use it?</p><p style="text-align:center"><button class="b95" id="pl">Use it</button> <button class="b95" id="pn">Not now</button></p>`);
-    $("pl").onclick=async()=>{try{if(await h.requestPermission({mode:"read"})==="granted")await load();else closePop()}catch(e){closePop()}};$("pn").onclick=closePop;
-  }catch(e){}
+async function useDict(id,force){   // switch to one of the built-in dictionaries, at any time
+  const d=DICTS.find(x=>x.id===id);if(!d)return;
+  if(!force&&id===dSel&&!dChanged)return;
+  if(!force&&dChanged&&!confirm("Switching dictionary will discard your unsaved dictionary changes. Continue?"))return;
+  msg(`Loading ${d.label}…`);
+  let w;try{w=await loadList(d)}catch(e){msg(`Couldn't load “${d.file}”. It must be in the same folder as the game.`);return}
+  dict.clear();w.forEach(x=>dict.add(x));BASE=w;TRIE=null;dSel=id;dName="";dChanged=false;dJust=false;dAdd=dRem=0;dHandle=null;
+  msg(`${d.label}: ${w.length.toLocaleString()} words.`);
 }
 function popup(t,html,side){
   if(letterResolve){const r=letterResolve;letterResolve=null;r(null)}
@@ -614,7 +625,7 @@ onbeforeunload=e=>{if(dChanged||(gDirty&&players&&!over)){e.preventDefault();e.r
 const click=id=>()=>$(id).click();
 const MENUS={Game:[["New game",()=>setup()],"-",["Open game…",()=>openGame()],["Save game",()=>saveGame(false)],["Save game as…",()=>saveGame(true)]],Play:[["Done",click("play")],["Pass",click("pass")],["Swap tiles",click("swapsel")],["Swap all",click("swap")],["Reject computer's move",click("rej")],["Shuffle rack",click("shuf")],["Recall placed tiles",click("recall")]],
 Options:[[`<span id="sndmark"></span>Sound`,()=>{soundOn=!soundOn;if(soundOn)sfx("slide")}],[`<span id="chkmark"></span>Check words in dictionary`,()=>{$("chk").checked=!$("chk").checked;render()}],"-",[`<span id="lv_easy"></span>Computer: Easy`,()=>setLevel("easy")],[`<span id="lv_medium"></span>Computer: Medium`,()=>setLevel("medium")],[`<span id="lv_hard"></span>Computer: Hard`,()=>setLevel("hard")]],
-Dictionary:[["New dictionary…",()=>openDict(true)],"-",["Add word…",()=>askWord("Add word","Type one or more words, separated by spaces:","Add",v=>applyWords(v,false,""),true,"",{label:"Add & Save",cb:v=>{if(applyWords(v,false,""))saveDict(false)}},true)],["Remove word",()=>askWord("Remove word","Type the word to remove. Its plurals and other forms are removed too.","Remove",v=>{selWord=clean(v);removeSel()},false,selWord||"",{label:"Remove & Save",cb:v=>{selWord=clean(v);if(removeSel())saveDict(false)}})],["Save",()=>saveDict(false)],["Save As…",()=>saveDict(true)],"-",["Restore default",restoreDict],"-",["Look up meaning",()=>lookup(selWord)]],
+Dictionary:[[`<span id="dk_uk"></span>UK common words (default)`,()=>useDict("uk")],[`<span id="dk_collins"></span>Collins Scrabble Dictionary`,()=>useDict("collins")],[`<span id="dk_us"></span>US Google 10,000 common words`,()=>useDict("us")],[`<span id="dk_custom"></span>Custom dictionary…`,()=>openDict(true)],"-",["Add word…",()=>askWord("Add word","Type one or more words, separated by spaces:","Add",v=>applyWords(v,false,""),true,"",{label:"Add & Save",cb:v=>{if(applyWords(v,false,""))saveDict(false)}},true)],["Remove word",()=>askWord("Remove word","Type the word to remove. Its plurals and other forms are removed too.","Remove",v=>{selWord=clean(v);removeSel()},false,selWord||"",{label:"Remove & Save",cb:v=>{selWord=clean(v);if(removeSel())saveDict(false)}})],["Save",()=>saveDict(false)],["Save As…",()=>saveDict(true)],"-",["Restore default",restoreDict],"-",["Look up meaning",()=>lookup(selWord)]],
 Help:[["How to play",()=>alert("Click a tile on your rack, then click a square on the board. Click a placed tile to take it back.\nPress Done when your word is finished, or Pass.\nPlay menu: swap tiles, shuffle, recall.\nA blank tile asks which letter it stands for.")]]};
 $("menubar").innerHTML=Object.keys(MENUS).map(k=>`<div class="menu"><span class="mt">${k}</span><div class="drop">${MENUS[k].map((m,i)=>m==="-"?`<div class="sep"></div>`:`<div class="mi" data-k="${k}" data-i="${i}">${m[0]}</div>`).join("")}</div></div>`).join("");
 document.querySelectorAll("#menubar .menu").forEach(m=>{

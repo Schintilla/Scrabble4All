@@ -9,13 +9,16 @@ Plain HTML, CSS and JavaScript: no build step, no dependencies.
 
 ```
 index.html                              the game
-scrabble4all-default-dictionary.txt     default word list (one word per line)
-scrabble4all-custom-dictionary.txt      optional: your own list, loaded automatically
+UK-common-words.txt                     built-in dictionary (the default)
+Collins-Scrabble Dictionary.txt         built-in dictionary
+US-google-10000-common-words.txt        built-in dictionary
 sounds/                                 Tiledown.wav, Slide.wav, Shuffle.wav, Winner.wav, Error.wav
 ```
 
-The word list and sounds are loaded when the page starts, so keep these files
-together. Edit the `.txt` files to change the dictionary; no code change needed.
+The dictionaries and sounds are loaded when the page starts, so keep these files
+together in the same folder. Each dictionary is a plain-text file with one word
+per line (words of 2–15 letters, A–Z, any case; only the first word on a line is
+used).
 
 ## Run it
 
@@ -23,8 +26,8 @@ together. Edit the `.txt` files to change the dictionary; no code change needed.
 - **Locally:** serve the folder, for example `python -m http.server`, then open
   `http://localhost:8000/`.
 - **Straight from disk:** browsers block a page from reading neighbouring files,
-  so the game asks you to choose `scrabble4all-default-dictionary.txt` once per
-  visit. Sounds still work.
+  so the game asks you to choose `UK-common-words.txt` once per visit. Sounds
+  still work.
 
 Works best in Microsoft Edge or Google Chrome. Other browsers play fine, but
 saving files falls back to a normal download.
@@ -39,8 +42,10 @@ saving files falls back to a normal download.
 - Look up a word's meaning (double-click a word in the score list, or use
   **Check definition** in the Add word window; needs internet)
 - **Save / open games** to resume later (Game menu)
-- Customisable dictionary (Dictionary menu): add or remove words, load a new
-  list, save it, restore the default
+- Choice of **four dictionaries**, switchable at any time (Dictionary menu):
+  UK common words (default), Collins Scrabble Dictionary, US Google 10,000
+  common words, or your own custom file
+- Edit the dictionary: add or remove words, save it, restore the original list
 
 ## How to play
 
@@ -54,14 +59,24 @@ saving files falls back to a normal download.
 With more than one human player, everyone shares the same screen and a
 "your turn" box hides the rack between turns.
 
-## Dictionary
+## Dictionaries
 
-At start-up the game loads `scrabble4all-default-dictionary.txt`. If
-`scrabble4all-custom-dictionary.txt` is also present it replaces the default.
-**Dictionary → New dictionary…** loads any plain-text word list, and **Save**
-writes your changes to a file on your own computer (the hosted copy is not
-modified; commit the updated `.txt` to the repository to publish it).
-**Restore default** goes back to the default list.
+Choose from the **Dictionary** menu at any time, even mid-game. The change
+applies to the next word checked and to the computer's next move.
+
+| Choice | File | Notes |
+|---|---|---|
+| UK common words | `UK-common-words.txt` | default |
+| Collins Scrabble Dictionary | `Collins-Scrabble Dictionary.txt` | |
+| US Google 10,000 common words | `US-google-10000-common-words.txt` | |
+| Custom dictionary… | any `.txt` on your computer | browse to it; stays local |
+
+A custom dictionary is never uploaded: the player browses to a file on their own
+computer. **Save** overwrites that file (Edge/Chrome); **Save As…** writes a new
+one. Amending a built-in list (**Add word**, **Remove word**) and saving turns it
+into a custom file. **Restore default** reloads the selected built-in list (or
+the UK list if a custom one is in use). Switching dictionary discards unsaved
+amendments, with a warning first.
 
 ## Word meanings
 
