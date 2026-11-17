@@ -58,11 +58,16 @@ body{display:flex;justify-content:center;align-items:center;height:100vh}
 #rack .tile{touch-action:none;user-select:none;cursor:grab}
 .cell.dropt{outline:3px solid #fff;outline-offset:-3px}.tile.pend{cursor:grab;touch-action:none;user-select:none}
 #btns button:disabled{color:#808080;text-shadow:1px 1px 0 #fff;cursor:default}
-.win{--c0:min(64px,calc((100vh - 120px)/15));--panel:max(clamp(390px,28vw,560px),calc(var(--c0)*7 + 48px));--c:max(16px,min(var(--c0),calc((100vw - var(--panel) - 60px)/15)))}
+.win{--c0:min(64px,calc((100vh - 120px)/15));--panel:max(clamp(440px,28vw,560px),calc(var(--c0)*7 + 48px));--c:max(16px,min(var(--c0),calc((100vw - var(--panel) - 60px)/15)))}
 #rack{--c:inherit}
 #rack .tile{flex:none;width:var(--c);height:var(--c);max-width:none;aspect-ratio:auto;font-size:calc(var(--c)*.6)}
 #rack .tile sub{font-size:calc(var(--c)*.25);right:2px;bottom:1px}
 .cell.dropt{outline:2px solid #00e000;outline-offset:-2px;box-shadow:inset 0 0 0 3px #04480c;filter:brightness(1.1)}
+#btns{flex-direction:column;flex-wrap:nowrap;gap:6px}
+.brow{display:flex;flex-wrap:wrap;gap:6px}.brow button{flex:1 1 auto}
+#brow2 button{flex:1 1 0;font-size:14px;padding:8px}
+#btns .brow:first-child{flex-wrap:nowrap}
+#btns .brow:first-child button{padding:6px 4px;font-size:11px;white-space:nowrap}
 </style></head><body>
 <div id="cover"></div><div id="pop" class="dlg"></div>
 <div class="win">
@@ -71,7 +76,7 @@ body{display:flex;justify-content:center;align-items:center;height:100vh}
 <div id="main">
 <div id="board"></div>
 <div id="right"><div id="scores"></div><div id="status"></div><div id="rack"></div>
-<div id="btns"><button id="play" disabled>Done</button><button id="pass">Pass</button><button id="recall">Recall</button><button id="shuf">Shuffle</button><button id="swapsel">Swap tiles</button><button id="swap">Swap all</button><button id="rej" style="display:none">Reject move</button></div></div></div>
+<div id="btns"><div class="brow"><button id="recall">Recall</button><button id="shuf">Shuffle</button><button id="swapsel">Swap tiles</button><button id="swap">Swap all</button><button id="remw">Remove Word</button><button id="addw">Add Word</button></div><div class="brow" id="brow2"><button id="play" disabled>Done</button><button id="pass">Pass</button></div><button id="rej" style="display:none">Reject move</button></div></div></div>
 <div id="sbar"><span id="sdict"></span><span id="slevel"></span><span id="stiles"></span><span id="scount"></span></div></div>
 <div style="display:none"><input type="file" id="gfile" accept=".json,.scrabble4all"><input type="checkbox" id="chk" checked><input type="file" id="file" accept=".txt,.dic,.lst"><input type="file" id="file2" accept=".txt,.dic,.lst"></div>
 <script>
@@ -623,6 +628,8 @@ document.addEventListener("dblclick",e=>{const mv=e.target.closest&&e.target.clo
 document.addEventListener("keydown",e=>{if(e.key==="Delete"&&selWord&&!over)removeSel();if(e.key==="Escape"){closePop();if(swapMode){swapMode=false;swapSel=new Set();note="";render()}}});
 onbeforeunload=e=>{if(dChanged||(gDirty&&players&&!over)){e.preventDefault();e.returnValue=""}};
 const click=id=>()=>$(id).click();
+const dictItem=k=>MENUS.Dictionary.find(m=>m!=="-"&&m[0]===k)[1];   // the same actions as the Dictionary menu items
+$("addw").onclick=()=>dictItem("Add word…")();$("remw").onclick=()=>dictItem("Remove word")();
 const MENUS={Game:[["New game",()=>setup()],"-",["Open game…",()=>openGame()],["Save game",()=>saveGame(false)],["Save game as…",()=>saveGame(true)]],Play:[["Done",click("play")],["Pass",click("pass")],["Swap tiles",click("swapsel")],["Swap all",click("swap")],["Reject computer's move",click("rej")],["Shuffle rack",click("shuf")],["Recall placed tiles",click("recall")]],
 Options:[[`<span id="sndmark"></span>Sound`,()=>{soundOn=!soundOn;if(soundOn)sfx("slide")}],[`<span id="chkmark"></span>Check words in dictionary`,()=>{$("chk").checked=!$("chk").checked;render()}],"-",[`<span id="lv_easy"></span>Computer: Easy`,()=>setLevel("easy")],[`<span id="lv_medium"></span>Computer: Medium`,()=>setLevel("medium")],[`<span id="lv_hard"></span>Computer: Hard`,()=>setLevel("hard")]],
 Dictionary:[[`<span id="dk_uk"></span>UK common words (default)`,()=>useDict("uk")],[`<span id="dk_collins"></span>Collins Scrabble Dictionary`,()=>useDict("collins")],[`<span id="dk_us"></span>US Google 10,000 common words`,()=>useDict("us")],[`<span id="dk_custom"></span>Custom dictionary…`,()=>openDict(true)],"-",["Add word…",()=>askWord("Add word","Type one or more words, separated by spaces:","Add",v=>applyWords(v,false,""),true,"",{label:"Add & Save",cb:v=>{if(applyWords(v,false,""))saveDict(false)}},true)],["Remove word",()=>askWord("Remove word","Type the word to remove. Its plurals and other forms are removed too.","Remove",v=>{selWord=clean(v);removeSel()},false,selWord||"",{label:"Remove & Save",cb:v=>{selWord=clean(v);if(removeSel())saveDict(false)}})],["Save",()=>saveDict(false)],["Save As…",()=>saveDict(true)],"-",["Restore default",restoreDict],"-",["Look up meaning",()=>lookup(selWord)]],
