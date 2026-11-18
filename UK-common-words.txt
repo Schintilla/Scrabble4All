@@ -460,7 +460,6 @@ acuteness
 acuter
 acutest
 acyclic
-ad
 adage
 adages
 adagio
@@ -923,7 +922,6 @@ aground
 ague
 aguish
 aguishly
-ah
 aha
 ahead
 ahem
@@ -7285,7 +7283,6 @@ cawing
 caws
 cay
 cayenne
-cc
 cease
 ceased
 ceasefire
@@ -48554,7 +48551,6 @@ youthful
 youths
 yow
 yowl
-yr
 ytterbium
 yttrium
 yucca
